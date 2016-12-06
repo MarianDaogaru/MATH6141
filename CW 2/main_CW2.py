@@ -391,7 +391,7 @@ def f(L, t, q, h, alpha, beta):
     Based on the chain rule expansion of the Euler-Lagrange equation given in
     the exercise, y double dot can be rearranged to obtain:
 
-    y_2dot = (dL/dy - y_dot * d2L/dydydot - dL/dtdydot)/d2L_dydot2
+    y_ddot = (dL/dy - y_dot * d2L/dydydot - dL/dtdydot)/d2L_dydot2
 
     Parameters:
     L - function
@@ -421,9 +421,9 @@ def f(L, t, q, h, alpha, beta):
             penalty function factor
 
     Return
-    dL- float
-            the value of the partial differentiation of L wrt y_dot and y_dot,
-            using central differencing
+    y_ddot - float
+            the value of the second derivative of y wrt t, based on the
+            rearrangement of the expansion of the Euler-Lagrande equation
     """
     assert isinstance(L, types.FunctionType), \
         "L is not a function in f. It is: {}.".format(type(L))
@@ -453,10 +453,69 @@ def f(L, t, q, h, alpha, beta):
 
 
 def dq_dt(q, t, h, alpha, beta):
-    #print(h)
+    """
+    A function used when calculating both the root and when using shooting
+    method. Based on the array q, which contains y & several derivatives of
+    y wrt time, this function creates another array dqdt which containes the
+    derivaties wrt time of each element in q.
+
+    Parameters:
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    t - float
+        time at which the function is evaluated
+
+    q - numpy array (2,)
+        array containing the functions y & y_dot
+        y - float
+        the value of the function that describes the output of the machinery.
+        This output is trying to be decreased, such that y(0)=1 & y(1)=0.9,
+        while maintaing the highest profit possible (the highest value of y)
+        y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    Return
+    dqdt - numpy array (2, )
+            an array similar to q, which contains the derivative wrt time of
+            each element of q. As q contains (y, y_dot), dqdt will contain
+            (y_dot, y_ddot).
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in dq_dt. It is: {}.".format(type(L))
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in dq_dt. Current type is: {}.".format(type(t))
+    assert type(q) == numpy.ndarray or type(q) == list, \
+        "q is not the supported type in dq_dt. Current type is: {}.".format(type(q))
+    assert type(q[0]) == float or type(q[0]) == numpy.float64 or type(q[0]) == numpy.float, \
+        "y is not the supported type in dq_dt. Current type is: {}.".format(type(q[0]))
+    assert type(q[1]) == float or type(q[1]) == numpy.float64 or type(q[1]) == numpy.float, \
+        "y_dot is not the supported type in dq_dt. Current type is: {}.".format(type(q[1]))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in dq_dt. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in dq_dt. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in dq_dt. Current type is: {}.".format(type(beta))
+
     dqdt = numpy.zeros_like(q)
     dqdt[0] = q[1] # y dot
     dqdt[1] = f(L, t, q, h, alpha, beta) # y ddot
+    assert dqdt.shape == q.shape, \
+        "dqdt does not have the same shape as q in dq_dt. There is a big problem."
+    assert (dqdt != 0).any() , \
+        "dqdt was not made properly in dq_dt. All value are equal to 0."
     return dqdt
 
 
@@ -498,6 +557,7 @@ def plot_graph(alpha, beta, h, dt):
     pyplot.legend()
     pyplot.show()
 
+
 def plot_convergence(alpha, beta, h_init, dt, N):
     h, errors = get_convergence(alpha, beta, h_init, dt, N)
 
@@ -510,8 +570,9 @@ def plot_convergence(alpha, beta, h_init, dt, N):
     pyplot.xlabel(r'$\Delta$h')
     pyplot.ylabel("Error")
     pyplot.grid(True, which="Both")
-    pyplot.title("Convergence of the method. For initial h={} & dt={}, convergence factor={.2f}.".format(h_init, dt, grad_conv))
+    pyplot.title("Convergence of the method. For initial h={0:.2f} & dt={1:.2f}, convergence factor={2:.3f}.".format(h_init, dt, grad_conv))
     pyplot.show()
+
 
 if __name__=="__main__":
     h = 0.05
