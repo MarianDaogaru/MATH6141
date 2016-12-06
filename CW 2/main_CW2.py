@@ -25,29 +25,79 @@ def P(t, y_dot, alpha, beta):
             the output of the machinery, such that y(0)=1 & y(1)=0.9.
 
     alpha - float
-            penalty factor
+            penalty function factor
 
     beta - float
-            penalty factor
+            penalty function factor
 
     Return
-    P (val) - float
+    p (val) - float
             the value of Penalty of the machine at t & y_dot
     """
     assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
         "t is not the supported type in P. Current type is: {}.".format(type(t))
     assert type(y_dot) == float or type(y_dot) == numpy.float64 or type(y_dot) == numpy.float, \
         "y_dot is not the supported type in P. Current type is: {}.".format(type(y_dot))
-    assert type(alpha) == float or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
         "alpha is not the supported type in P. Current type is: {}.".format(type(alpha))
-    assert type(beta) == float or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
         "beta is not the supported type in P. Current type is: {}.".format(type(beta))
 
-    return alpha * y_dot**2 + beta * (t**2 - 1) * y_dot**3
+    p = alpha * y_dot**2 + beta * (t**2 - 1) * y_dot**3
+    assert type(p) == float or type(p) == numpy.float64 or type(p) == numpy.float, \
+        "p is not the supported type in P. Current type is: {}.".format(type(p))
+
+    return p
 
 
-def L(t, y, dy, alpha, beta):
-    return P(t, dy, alpha, beta) - y
+def L(t, y, y_dot, alpha, beta):
+    """
+    The Lagrangiang function L(t, y(t), y_dot(t), ...) which has to be
+    minimised such that the profit is maximised. S, the loss of the factory,
+    is described as:
+        S = integrate(P - y) dt from 0 to 1
+    Thus leading to L(t, y(t), y_dot(t), .. ) = P - y.
+    This function returs the value of L at a certain time t.
+
+    Parameters:
+    t - float
+        time at which the function is evaluated
+
+    y - float
+        the value of the function that describes the output of the machinery.
+        This output is trying to be decreased, such that y(0)=1 & y(1)=0.9,
+        while maintaing the highest profit possible (the highest value of y)
+
+    y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    Return
+    L(val) - float
+            the value of the lagrangian function at a particular time t.
+    """
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in L. Current type is: {}.".format(type(t))
+    assert type(y) == float or type(y) == numpy.float64 or type(y) == numpy.float, \
+        "y is not the supported type in L. Current type is: {}.".format(type(y))
+    assert type(y_dot) == float or type(y_dot) == numpy.float64 or type(y_dot) == numpy.float, \
+        "y_dot is not the supported type in L. Current type is: {}.".format(type(y_dot))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in L. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in L. Current type is: {}.".format(type(beta))
+
+    l = P(t, y_dot, alpha, beta) - y
+    assert type(l) == float or type(l) == numpy.float64 or type(l) == numpy.float, \
+        "l is not the supported type in L. Current type is: {}.".format(type(l))
+
+    return l
 
 
 def dL_dy(L, t, q, h, alpha, beta):
