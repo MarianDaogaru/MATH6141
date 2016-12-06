@@ -387,10 +387,70 @@ def d2L_dydot2(L, t, q, h, alpha, beta):
 
 
 def f(L, t, q, h, alpha, beta):
-    return (dL_dy(L, t, q, h, alpha, beta) - \
-             d2L_dtdydot(L, t, q, h, alpha, beta) - \
-             d2L_dydydot(L, t, q, h, alpha, beta)) / \
-             d2L_dydot2(L, t, q, h, alpha, beta)
+    """
+    Based on the chain rule expansion of the Euler-Lagrange equation given in
+    the exercise, y double dot can be rearranged to obtain:
+
+    y_2dot = (dL/dy - y_dot * d2L/dydydot - dL/dtdydot)/d2L_dydot2
+
+    Parameters:
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    t - float
+        time at which the function is evaluated
+
+    q - numpy array (2,)
+        array containing the functions y & y_dot
+        y - float
+        the value of the function that describes the output of the machinery.
+        This output is trying to be decreased, such that y(0)=1 & y(1)=0.9,
+        while maintaing the highest profit possible (the highest value of y)
+        y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    Return
+    dL- float
+            the value of the partial differentiation of L wrt y_dot and y_dot,
+            using central differencing
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in f. It is: {}.".format(type(L))
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in f. Current type is: {}.".format(type(t))
+    assert type(q) == numpy.ndarray or type(q) == list, \
+        "q is not the supported type in f. Current type is: {}.".format(type(q))
+    assert type(q[0]) == float or type(q[0]) == numpy.float64 or type(q[0]) == numpy.float, \
+        "y is not the supported type in f. Current type is: {}.".format(type(q[0]))
+    assert type(q[1]) == float or type(q[1]) == numpy.float64 or type(q[1]) == numpy.float, \
+        "y_dot is not the supported type in f. Current type is: {}.".format(type(q[1]))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in f. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in f. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in f. Current type is: {}.".format(type(beta))
+
+    y_ddot = (dL_dy(L, t, q, h, alpha, beta) -
+              d2L_dtdydot(L, t, q, h, alpha, beta) - \
+              d2L_dydydot(L, t, q, h, alpha, beta)) / \
+              d2L_dydot2(L, t, q, h, alpha, beta)
+    assert type(y_ddot) == float or type(y_ddot) == numpy.float64 or type(y_ddot) == numpy.float, \
+        "y_ddot is not the supported type in f. Current type is: {}.".format(type(y_ddot))
+
+    return y_ddot
+
 
 def dq_dt(q, t, h, alpha, beta):
     #print(h)
