@@ -160,23 +160,153 @@ def dL_dy(L, t, q, h, alpha, beta):
 
     dl = (L(t, q[0]+h, q[1], alpha, beta) - L(t, q[0]-h, q[1], alpha, beta)) / (2*h)
     assert type(dl) == float or type(dl) == numpy.float64 or type(dl) == numpy.float, \
-        "dl is not the supported type in L. Current type is: {}.".format(type(dl))
+        "dl is not the supported type in dL_dy. Current type is: {}.".format(type(dl))
 
     return dl
 
 
 def d2L_dtdydot(L, t, q, h, alpha, beta):
-    return (L(t+h, q[0], q[1]+h, alpha, beta) - \
-            L(t+h, q[0], q[1]-h, alpha, beta) - \
-            L(t-h, q[0], q[1]+h, alpha, beta) + \
-            L(t-h, q[0], q[1]-h, alpha, beta)) / (4 * h**2)
+    """
+    This function returns the value of the partial derivative of L wrt t &
+    y_dot, by using the central differencing method.
+
+    As L is a function of (t, y, y_dot), the partial derivate wrt t & y_dot
+    using central differencing takes the form:
+
+    dL/dtdy_dot = (L(t+h, y, y_dot+h) + L(t-h, y, y_dot-h) -
+                   L(t-h, y, y_dot+h) - L(t+h, y, y_dot-h)) / (4*h^2)
+
+    Parameters:
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    t - float
+        time at which the function is evaluated
+
+    q - numpy array (2,)
+        array containing the functions y & y_dot
+        y - float
+        the value of the function that describes the output of the machinery.
+        This output is trying to be decreased, such that y(0)=1 & y(1)=0.9,
+        while maintaing the highest profit possible (the highest value of y)
+        y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    Return
+    dL- float
+            the value of the partial differentiation of L wrt t and y_dot,
+            using central differencing
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in dL_dtdydot. It is: {}.".format(type(L))
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in dL_dtdydot. Current type is: {}.".format(type(t))
+    assert type(q) == numpy.ndarray or type(q) == list, \
+        "q is not the supported type in dL_dtdydot. Current type is: {}.".format(type(q))
+    assert type(q[0]) == float or type(q[0]) == numpy.float64 or type(q[0]) == numpy.float, \
+        "y is not the supported type in dL_dtdydot. Current type is: {}.".format(type(q[0]))
+    assert type(q[1]) == float or type(q[1]) == numpy.float64 or type(q[1]) == numpy.float, \
+        "y_dot is not the supported type in dL_dtdydot. Current type is: {}.".format(type(q[1]))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in dL_dtdydot. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in dL_dtdydot. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in dL_dtdydot. Current type is: {}.".format(type(beta))
+
+    # calculate each component of the central differencing
+    k1 = L(t+h, q[0], q[1]+h, alpha, beta)
+    k2 = L(t+h, q[0], q[1]-h, alpha, beta)
+    k3 = L(t-h, q[0], q[1]+h, alpha, beta)
+    k4 = L(t-h, q[0], q[1]-h, alpha, beta)
+
+    dL = (k1 - k2 - k3 + k4) / (4 * h**2)
+
+    return dL
+
 
 def d2L_dydydot(L, t, q, h, alpha, beta):
+    """
+    This function returns the value of the partial derivative of L wrt y &
+    y_dot, by using the central differencing method.
+
+    As L is a function of (t, y, y_dot), the partial derivate wrt y & y_dot
+    using central differencing takes the form:
+
+    dL/dydy_dot = (L(t, y+h, y_dot+h) + L(t, y-h, y_dot-h) -
+                   L(t, y-h, y_dot+h) - L(t, y+h, y_dot-h)) / (4*h^2)
+
+
+    Parameters:
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    t - float
+        time at which the function is evaluated
+
+    q - numpy array (2,)
+        array containing the functions y & y_dot
+        y - float
+        the value of the function that describes the output of the machinery.
+        This output is trying to be decreased, such that y(0)=1 & y(1)=0.9,
+        while maintaing the highest profit possible (the highest value of y)
+        y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    Return
+    dL- float
+            the value of the partial differentiation of L wrt y and y_dot,
+            using central differencing
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in dL_dydydot. It is: {}.".format(type(L))
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in dL_dydydot. Current type is: {}.".format(type(t))
+    assert type(q) == numpy.ndarray or type(q) == list, \
+        "q is not the supported type in dL_dydydot. Current type is: {}.".format(type(q))
+    assert type(q[0]) == float or type(q[0]) == numpy.float64 or type(q[0]) == numpy.float, \
+        "y is not the supported type in dL_dydydot. Current type is: {}.".format(type(q[0]))
+    assert type(q[1]) == float or type(q[1]) == numpy.float64 or type(q[1]) == numpy.float, \
+        "y_dot is not the supported type in dL_dydydot. Current type is: {}.".format(type(q[1]))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in dL_dydydot. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in dL_dydydot. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in dL_dydydot. Current type is: {}.".format(type(beta))
+
     k1 = L(t, q[0]+h, q[1]+h, alpha, beta)
     k2 = L(t, q[0]-h, q[1]+h, alpha, beta)
     k3 = L(t, q[0]-h, q[1]-h, alpha, beta)
     k4 = L(t, q[0]+h, q[1]-h, alpha, beta)
-    return q[1] * (k1 - k2 + k3 - k4) / (4*h**2)
+
+    dL = q[1] * (k1 - k2 + k3 - k4) / (4*h**2)
+    assert type(dL) == float or type(dL) == numpy.float64 or type(dL) == numpy.float, \
+        "dL is not the supported type in dL_dtdydot. Current type is: {}.".format(type(dL))
+
+    return dL
 
 
 def d2L_dydot2(L, t, q, h, alpha, beta):
@@ -250,7 +380,7 @@ def plot_convergence(alpha, beta, h_init, dt, N):
     pyplot.xlabel(r'$\Delta$h')
     pyplot.ylabel("Error")
     pyplot.grid(True, which="Both")
-    pyplot.title("Convergence of the method. For initial h={} & dt={}, convergence factor={}.".format(h_init, dt, grad_conv))
+    pyplot.title("Convergence of the method. For initial h={} & dt={}, convergence factor={.2f}.".format(h_init, dt, grad_conv))
     pyplot.show()
 
 if __name__=="__main__":
