@@ -2,7 +2,7 @@ import numpy
 from matplotlib import pyplot
 from scipy.integrate import odeint
 from scipy.optimize import newton
-
+import types
 
 # the boundary values given in the exercise
 y_A = 1.
@@ -101,8 +101,68 @@ def L(t, y, y_dot, alpha, beta):
 
 
 def dL_dy(L, t, q, h, alpha, beta):
-    """central differencing on dt"""
-    return (L(t, q[0]+h, q[1], alpha, beta) - L(t, q[0]-h, q[1], alpha, beta)) / (2*h)
+    """
+    This function returns the value of the central differencing of L wrt y,
+    at a given time t, with a step-size h.
+
+    As L is a function of t, y, y_dot, dL/dy using the central differencing
+    implemented in this function results in:
+
+    dL/dy = (L(t, y+h, y_dot) - L(t, y-h, y_dot))/(2h)
+
+    Parameters:
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    t - float
+        time at which the function is evaluated
+
+    q - numpy array (2,)
+        array containing the functions y & y_dot
+        y - float
+        the value of the function that describes the output of the machinery.
+        This output is trying to be decreased, such that y(0)=1 & y(1)=0.9,
+        while maintaing the highest profit possible (the highest value of y)
+        y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    Return
+    dL/dy - float
+            the value of the central differencing of L wrt y
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in dL_dy. It is: {}.".format(type(L))
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in dL_dy. Current type is: {}.".format(type(t))
+    assert type(q) == numpy.ndarray or type(q) == list, \
+        "q is not the supported type in dL_dy. Current type is: {}.".format(type(q))
+    assert type(q[0]) == float or type(q[0]) == numpy.float64 or type(q[0]) == numpy.float, \
+        "y is not the supported type in dL_dy. Current type is: {}.".format(type(q[0]))
+    assert type(q[1]) == float or type(q[1]) == numpy.float64 or type(q[1]) == numpy.float, \
+        "y_dot is not the supported type in dL_dy. Current type is: {}.".format(type(q[1]))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in dL_dy. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in dL_dy. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in dL_dy. Current type is: {}.".format(type(beta))
+
+    dl = (L(t, q[0]+h, q[1], alpha, beta) - L(t, q[0]-h, q[1], alpha, beta)) / (2*h)
+    assert type(dl) == float or type(dl) == numpy.float64 or type(dl) == numpy.float, \
+        "dl is not the supported type in L. Current type is: {}.".format(type(dl))
+
+    return dl
 
 
 def d2L_dtdydot(L, t, q, h, alpha, beta):
@@ -125,6 +185,7 @@ def d2L_dydot2(L, t, q, h, alpha, beta):
     k3 = L(t, q[0], q[1]-h, alpha, beta)
     return (k1 - 2 * k2 + k3) / h**2
 
+
 def f(L, t, q, h, alpha, beta):
     return (dL_dy(L, t, q, h, alpha, beta) - \
              d2L_dtdydot(L, t, q, h, alpha, beta) - \
@@ -139,14 +200,10 @@ def dq_dt(q, t, h, alpha, beta):
     return dqdt
 
 
-def phi_z(t, q, z):
-    return q[0] - y_B
-
-
 def shooting_ivp(z, h, alpha, beta, time):
-    q = odeint(dq_dt, [y_A, z], time, args=(h, alpha, beta)) # nu-i bine
+    q_init = numpy.array([y_A, z])
+    q = odeint(dq_dt, q_init, time, args=(h, alpha, beta)) # nu-i bine
     y_boundary = q[-1, 0]
-    #print(y_boundary)
     return y_boundary - y_B
 
 
