@@ -14,7 +14,7 @@ def P(t, dy, alpha, beta):
 
 
 def L(t, y, dy, alpha, beta):
-    print(y, dy, t)
+    #print(y, dy, t)
     return P(t, dy, alpha, beta) - y
 
 
@@ -30,7 +30,7 @@ def d2L_dtdydot(L, t, q, h, alpha, beta):
             L(t-h, q[0], q[1]-h, alpha, beta)) / (4 * h**2)
 
 def d2L_dydydot(L, t, q, h, alpha, beta):
-    print(type(q))
+    #print(type(q))
     k1 = L(t, q[0]+h, q[1]+h, alpha, beta)
     k2 = L(t, q[0]-h, q[1]+h, alpha, beta)
     k3 = L(t, q[0]-h, q[1]-h, alpha, beta)
@@ -39,7 +39,7 @@ def d2L_dydydot(L, t, q, h, alpha, beta):
 
 
 def d2L_dydot2(L, t, q, h, alpha, beta):
-    print("d2l_dydot2", q)
+    #print("d2l_dydot2", q)
     k1 = L(t, q[0], q[1]+h, alpha, beta)
     k2 = L(t, q[0], q[1], alpha, beta)
     k3 = L(t, q[0], q[1]-h, alpha, beta)
@@ -56,6 +56,7 @@ def f(L, t, q, h, alpha, beta):
              d2L_dydot2(L, t, q, h, alpha, beta)
 
 def dq_dt(q, t, h, alpha, beta):
+    #print(h)
     dqdt = numpy.zeros_like(q)
     dqdt[0] = q[1] # y dot
     dqdt[1] = f(L, t, q, h, alpha, beta) # y ddot
@@ -66,38 +67,62 @@ def phi_z(t, q, z):
     return q[0] - y_B
 
 
-def shooting_ivp(z, h, alpha, beta):
-    q = odeint(dq_dt, [y_A, z], [0, 1], args=(h, alpha, beta)) # nu-i bine
+def shooting_ivp(z, h, alpha, beta, time):
+    q = odeint(dq_dt, [y_A, z], time, args=(h, alpha, beta)) # nu-i bine
     y_boundary = q[-1, 0]
+    #print(y_boundary)
     return y_boundary - y_B
 
 
-def shooting():
+def shooting(alpha, beta, h, dt):
     z_guess = 0.1
-    h = 0.01
-    alpha = 7/4
-    beta = 5
-    z_proper = newton(shooting_ivp, z_guess, args=(h, alpha, beta))
-    print("Z ", z_proper)
-    t = numpy.linspace(0, 1, 501)
-    soln = odeint(dq_dt, [y_A, z_proper], t, args=(h, alpha, beta))
-    return t, soln[:, 0]
+    time = numpy.linspace(0, 1, int(1/dt)+1)
+    z_proper = newton(shooting_ivp, z_guess, args=(h, alpha, beta, time), tol=1e-12, maxiter=200)
+    q = odeint(dq_dt, [y_A, z_proper], time, args=(h, alpha, beta))
+    return time, q[:, 0]
 
 
+def get_convergence(alpha, beta, h_init, dt, N, order=2):
+    errors = numpy.zeros(N)
+    convergence = numpy.zeros([N, int(1/dt)+1])
+    h = numpy.zeros(N)
+    for i in range(N):
+        h[i] = h_init / order**i
+        time, convergence[i] = shooting(alpha, beta, h[i], dt)
+        errors[i] = numpy.linalg.norm((convergence[i] - convergence[i-1]), 2)
 
+    return h[1:], errors[1:]
+
+
+def plot_graph(alpha, beta, h, dt):
+    t, q = shooting(alpha, beta, h, dt)
+
+    pyplot.figure(figsize=(12,6))
+    pyplot.plot(t, q, label="y(t)")
+    pyplot.xlabel("t")
+    pyplot.ylabel("y(t)")
+    pyplot.title("The efficiency of the plant required for alpha={} & beta={}. h={} and dt={}".format(alpha, beta, h, dt))
+    pyplot.legend()
+    pyplot.show()
+
+def plot_convergence(alpha, beta, h_init, dt, N):
+    h, errors = get_convergence(alpha, beta, h_init, dt, N)
+
+    grad_conv, e_pow_conv = numpy.polyfit(numpy.log(h), numpy.log(errors), 1)
+    convergence_y = numpy.exp(e_pow_conv) * h**grad_conv
+    print(grad_conv)
+    pyplot.figure(figsize=(12,6))
+    pyplot.loglog(h, errors)
+    pyplot.loglog(h, errors, "bx")
+    pyplot.xlabel(r'$\Delta$h')
+    pyplot.ylabel("Error")
+    pyplot.grid(True, which="Both")
+    pyplot.title("Convergence of the method. For initial h={} & dt={}, convergence factor={}.".format(h_init, dt, grad_conv))
+    pyplot.show()
 
 if __name__=="__main__":
-
-#    x, y = shooting()
-#    pyplot.figure(figsize=(12,6))
-#    pyplot.plot(x, y)
-#    pyplot.plot(x, 2*numpy.exp(1)/(numpy.exp(1)-1)*(1-numpy.exp(-x))-x)
-#    pyplot.xlabel(r"$x$")
-#    pyplot.show()
-#    pyplot.figure(figsize=(12,6))
-#    pyplot.plot(x, y-(2*numpy.exp(1)/(numpy.exp(1)-1)*(1-numpy.exp(-x))-x))
-#    pyplot.xlabel(r"$x$")
-#    pyplot.show()
-
-    #q=shooting_ivp(0.1, 0.001, 5, 5)
-    t, a = shooting()
+    h = 0.05
+    dt = 0.01
+    plot_graph(5, 5, h, dt)
+    plot_graph(7/4, 5, h, dt)
+    plot_convergence(7/4, 5, h, dt, 8)
