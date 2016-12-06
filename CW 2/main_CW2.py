@@ -4,17 +4,49 @@ from scipy.integrate import odeint
 from scipy.optimize import newton
 
 
+# the boundary values given in the exercise
 y_A = 1.
 y_B = 0.9
 
 
+def P(t, y_dot, alpha, beta):
+    """
+    The penalty function which describes how the factory maintenance cost
+    will increase if the usage is kept high.
+    it is used to calculate the optimum path for decreasing the factory
+    capacity, while maintaining high profit.
 
-def P(t, dy, alpha, beta):
-    return alpha * dy**2 + beta * (t**2 - 1) * dy**3
+    Parameters
+    t - float
+        time at which the function is evaluated
+
+    y_dot - float
+            the first derivate wrt time of the function y. y describes
+            the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    alpha - float
+            penalty factor
+
+    beta - float
+            penalty factor
+
+    Return
+    P (val) - float
+            the value of Penalty of the machine at t & y_dot
+    """
+    assert type(t) == float or type(t) == numpy.float64 or type(t) == numpy.float, \
+        "t is not the supported type in P. Current type is: {}.".format(type(t))
+    assert type(y_dot) == float or type(y_dot) == numpy.float64 or type(y_dot) == numpy.float, \
+        "y_dot is not the supported type in P. Current type is: {}.".format(type(y_dot))
+    assert type(alpha) == float or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in P. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in P. Current type is: {}.".format(type(beta))
+
+    return alpha * y_dot**2 + beta * (t**2 - 1) * y_dot**3
 
 
 def L(t, y, dy, alpha, beta):
-    #print(y, dy, t)
     return P(t, dy, alpha, beta) - y
 
 
@@ -30,7 +62,6 @@ def d2L_dtdydot(L, t, q, h, alpha, beta):
             L(t-h, q[0], q[1]-h, alpha, beta)) / (4 * h**2)
 
 def d2L_dydydot(L, t, q, h, alpha, beta):
-    #print(type(q))
     k1 = L(t, q[0]+h, q[1]+h, alpha, beta)
     k2 = L(t, q[0]-h, q[1]+h, alpha, beta)
     k3 = L(t, q[0]-h, q[1]-h, alpha, beta)
@@ -39,17 +70,12 @@ def d2L_dydydot(L, t, q, h, alpha, beta):
 
 
 def d2L_dydot2(L, t, q, h, alpha, beta):
-    #print("d2l_dydot2", q)
     k1 = L(t, q[0], q[1]+h, alpha, beta)
     k2 = L(t, q[0], q[1], alpha, beta)
     k3 = L(t, q[0], q[1]-h, alpha, beta)
     return (k1 - 2 * k2 + k3) / h**2
 
 def f(L, t, q, h, alpha, beta):
-    """dqdx = numpy.zeros_like(q)
-    dqdx[0] = q[1]
-    dqdx[1] = -1 - q[1]
-    return dqdx"""
     return (dL_dy(L, t, q, h, alpha, beta) - \
              d2L_dtdydot(L, t, q, h, alpha, beta) - \
              d2L_dydydot(L, t, q, h, alpha, beta)) / \
