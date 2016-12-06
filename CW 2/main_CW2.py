@@ -452,7 +452,7 @@ def f(L, t, q, h, alpha, beta):
     return y_ddot
 
 
-def dq_dt(q, t, h, alpha, beta):
+def dq_dt(q, t, L, h, alpha, beta):
     """
     A function used when calculating both the root and when using shooting
     method. Based on the array q, which contains y & several derivatives of
@@ -460,10 +460,6 @@ def dq_dt(q, t, h, alpha, beta):
     derivaties wrt time of each element in q.
 
     Parameters:
-    L - function
-        the lagrangian function that describes the profit loss required to be
-        minimesed, based on the machine output y
-
     t - float
         time at which the function is evaluated
 
@@ -476,6 +472,10 @@ def dq_dt(q, t, h, alpha, beta):
         y_dot - float
             the first derivate wrt time of the function y. y describes
             the output of the machinery, such that y(0)=1 & y(1)=0.9.
+
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
 
     h -float
         the step required in central differencing.
@@ -519,35 +519,150 @@ def dq_dt(q, t, h, alpha, beta):
     return dqdt
 
 
-def shooting_ivp(z, h, alpha, beta, time):
+def shooting_ivp(z, L, h, alpha, beta, time):
+    """
+    This function represents the algorithm for for the Initial Value Problem
+    (IVP) used in the shooting method.
+
+    With the initial quess (and further approximated values of this until the
+    proper root is found) z and with the boundary condition at A (the start),
+    we integrate the function dq_dt which contains the values of
+    (y_dot, y_doubledot), to obtain the values of (y, y_dot). over a period
+    of time. After this integration is finished, we take the last value
+    obtained from the integration, for point B, and substract the boundary
+    value(know), and return this difference as the root of the problem.
+    This algorithm is repeated until tolerance in achieved.
+
+    Parameters
+    z - float
+        initial guess for y'(A) used in shooting method
+
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    time - numpy array (N, )
+        array containing the period of time over which shooting should be
+        investigated, from A to B, distributed into an N length array
+
+    Return
+    phi - float
+        as the shooting method is based on an initial guess, finding
+        the apropriate z requires foot finding. As such, in order to
+        obtain the proper z, this function returns the value obtained
+        during root finding minus the exact value required.
+    """
+    assert type(z) == float or type(z) == int or type(z) == numpy.float64 or type(z) == numpy.float, \
+        "z is not the supported type in shooting_ivp. Current type is: {}.".format(type(z))
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in shooting_ivp. It is: {}.".format(type(L))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in shooting_ivp. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in shooting_ivp. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in shooting_ivp. Current type is: {}.".format(type(beta))
+    assert type(time) == numpy.ndarray or type(time) == list, \
+        "time is not the supported type in shooting_ivp. Current type is: {}.".format(type(time))
+
+    # create the initial conditions
     q_init = numpy.array([y_A, z])
-    q = odeint(dq_dt, q_init, time, args=(h, alpha, beta)) # nu-i bine
+    # integrate
+    q = odeint(dq_dt, q_init, time, args=(L, h, alpha, beta))
+
+    # get the last value
     y_boundary = q[-1, 0]
-    return y_boundary - y_B
+    phi = y_boundary - y_B
+    assert type(phi) == float or type(phi) == numpy.float64 or type(phi) == numpy.float, \
+        "phi is not the supported type in shooting_ivp. Current type is: {}.".format(type(phi))
+    return phi
 
 
-def shooting(alpha, beta, h, dt):
-    z_guess = 0.1
+def shooting(L, alpha, beta, h, dt):
+    """
+    This function implements the algorithm for the shooting method of solving
+    Boundary Value Problems (BVP).
+    It starts by considering that at initial time y(a) = A, and y'(a) = z,
+    with z being an initial guess. With this intial guess, the system is
+    evolved over the time period required. When the last value is obtained,
+    it should be y(b) = B. However, initially, this is not the case.
+    As such, a function phi(t, z) is considered, such that:
+    phi(t, z) = y(t, z) - B. In order to obtain the actual value of the initial
+    guess z, for which y(b)=B, we must find the root of phi at position b, to
+    a given tolerance.
+
+    Paramters
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    h -float
+        the step required in central differencing.
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    dt - float
+        the time step required for integration
+
+    Return
+    time - numpy array (N, )
+            the time domain distributed between 0 & 1 in equal spaces, defined
+            by dt
+    q[:, 0] - numpy array(N, )
+            array containg the value of the function y(t), for the interval
+            (0, 1)
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in shooting. It is: {}.".format(type(L))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in shooting. Current type is: {}.".format(type(h))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in shooting. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in shooting. Current type is: {}.".format(type(beta))
+    assert type(dt) == float or type(dt) == int or type(dt) == numpy.float64 or type(dt) == numpy.float, \
+        "dt is not the supported type in shooting. Current type is: {}.".format(type(dt))
+
+    # initial guess, chose as y_A - y_B, as the slope of the line between A & B
+    z_guess = y_A - y_B
     time = numpy.linspace(0, 1, int(1/dt)+1)
-    z_proper = newton(shooting_ivp, z_guess, args=(h, alpha, beta, time), tol=1e-12, maxiter=200)
-    q = odeint(dq_dt, [y_A, z_proper], time, args=(h, alpha, beta))
+    # get the proper z values for our function, which will give  0 to shooting_ivp
+    z_proper = newton(shooting_ivp, z_guess, args=(L, h, alpha, beta, time), tol=1e-12, maxiter=200)
+    # integrate and calculate the value of y(t)
+    q = odeint(dq_dt, [y_A, z_proper], time, args=(L, h, alpha, beta))
+    assert q.shape == (time.shape[0], 2), \
+        "q does not have the porper shape in shooting. It has {}.".format(q.shape)
+
     return time, q[:, 0]
 
 
-def get_convergence(alpha, beta, h_init, dt, N, order=2):
+def get_convergence(L, alpha, beta, h_init, dt, N, order=2):
     errors = numpy.zeros(N)
     convergence = numpy.zeros([N, int(1/dt)+1])
     h = numpy.zeros(N)
     for i in range(N):
         h[i] = h_init / order**i
-        time, convergence[i] = shooting(alpha, beta, h[i], dt)
+        time, convergence[i] = shooting(L, alpha, beta, h[i], dt)
         errors[i] = numpy.linalg.norm((convergence[i] - convergence[i-1]), 2)
 
     return h[1:], errors[1:]
 
 
-def plot_graph(alpha, beta, h, dt):
-    t, q = shooting(alpha, beta, h, dt)
+def plot_graph(L, alpha, beta, h, dt):
+    t, q = shooting(L, alpha, beta, h, dt)
 
     pyplot.figure(figsize=(12,6))
     pyplot.plot(t, q, label="y(t)")
@@ -558,8 +673,8 @@ def plot_graph(alpha, beta, h, dt):
     pyplot.show()
 
 
-def plot_convergence(alpha, beta, h_init, dt, N):
-    h, errors = get_convergence(alpha, beta, h_init, dt, N)
+def plot_convergence(L, alpha, beta, h_init, dt, N):
+    h, errors = get_convergence(L, alpha, beta, h_init, dt, N)
 
     grad_conv, e_pow_conv = numpy.polyfit(numpy.log(h), numpy.log(errors), 1)
     convergence_y = numpy.exp(e_pow_conv) * h**grad_conv
@@ -577,6 +692,6 @@ def plot_convergence(alpha, beta, h_init, dt, N):
 if __name__=="__main__":
     h = 0.05
     dt = 0.01
-    plot_graph(5, 5, h, dt)
-    plot_graph(7/4, 5, h, dt)
-    plot_convergence(7/4, 5, h, dt, 8)
+    plot_graph(L, 5, 5, h, dt)
+    plot_graph(L, 7/4, 5, h, dt)
+    plot_convergence(L, 7/4, 5, h, dt, 8)
