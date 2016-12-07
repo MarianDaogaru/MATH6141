@@ -645,7 +645,8 @@ def shooting(L, alpha, beta, h, dt):
     q = odeint(dq_dt, [y_A, z_proper], time, args=(L, h, alpha, beta))
     assert q.shape == (time.shape[0], 2), \
         "q does not have the porper shape in shooting. It has {}.".format(q.shape)
-
+    assert (time.shape == q[:, 0].shape), \
+        "time and q[0] should have the same shape in shooting."
     return time, q[:, 0]
 
 
@@ -724,12 +725,56 @@ def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
         "h was not created properly in get_convergence."
     assert (errors != 0).all(), \
         "errors was not created properly in get_convergence"
+    assert (h.shape == errors.shape), \
+        "errors & h should have the same shape in get_convergence."
     return h[1:], errors[1:]
 
 
 def plot_graph(L, alpha, beta, h, dt):
+    """
+    This function takes another function L (which is dependent on another
+    function y(t) & several parameters required by
+    the function, then applies shooting on the function to integrate it,
+    and displays the behaviour of y over (0, 1) time domain.
+
+    Parameters
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    h - float
+        the step required in central differencing
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    dt - float
+        the time step required for integration
+
+    Returns
+    None
+    However, the function display a graph.
+
+    """
+
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in plot_graph. It is: {}.".format(type(L))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in plot_graph. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in plot_graph. Current type is: {}.".format(type(beta))
+    assert type(dt) == float or type(dt) == int or type(dt) == numpy.float64 or type(dt) == numpy.float, \
+        "dt is not the supported type in plot_graph. Current type is: {}.".format(type(dt))
+    assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
+        "h is not the supported type in plot_graph. Current type is: {}.".format(type(h))
+
+    # get the values for time & integration of y
     t, q = shooting(L, alpha, beta, h, dt)
 
+    # plot the graph
     pyplot.figure(figsize=(12,6))
     pyplot.plot(t, q, label="y(t)")
     pyplot.xlabel("t")
@@ -737,14 +782,76 @@ def plot_graph(L, alpha, beta, h, dt):
     pyplot.title("The efficiency of the plant required for alpha={} & beta={}. h={} and dt={}".format(alpha, beta, h, dt))
     pyplot.legend()
     pyplot.show()
+    return None
 
 
-def plot_convergence(L, alpha, beta, h_init, dt, N):
+def plot_convergence(L, alpha, beta, h_init, dt, N, base=2):
+    """
+    This function takes a function L dependent on another function y(t),
+    and several parameters required to apply the shooting BVp method.
+    Then it obtains the value of the error (the difference between
+    the ith evaluation of the problem and the i-1) and the values
+    for the central difference step to plot how the shooting method
+    behaves based on the size of h.
+
+    Parameters
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    h_init - float
+        the initial step required in central differencing.This will be modified
+        with each iteration based on the following: h = h_init / base**i,
+        with i from 1 to N-1
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    dt - float
+        the time step required for integration
+
+    N - int
+        the number of iterations the code will execute shooting based on the
+        other parameters given. In addition, each run will use a different
+        step size h = h_init/ base**i, with i from 1 to N-1
+
+    base - float
+            the base for creating different values for the step-size
+
+    Return
+    None
+    The function plots the graph of the convergece of the function based on
+    the given parameters.
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in get_convergence. It is: {}.".format(type(L))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in get_convergence. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in get_convergence. Current type is: {}.".format(type(beta))
+    assert type(dt) == float or type(dt) == int or type(dt) == numpy.float64 or type(dt) == numpy.float, \
+        "dt is not the supported type in get_convergence. Current type is: {}.".format(type(dt))
+    assert type(h_init) == float or type(h_init) == int or type(h_init) == numpy.float64 or type(h_init) == numpy.float, \
+        "h_init is not the supported type in get_convergence. Current type is: {}.".format(type(h_init))
+    assert type(N) == float or type(N) == int or type(N) == numpy.float64 or type(N) == numpy.float, \
+        "N is not the supported type in get_convergence. Current type is: {}.".format(type(N))
+    if type(N) != int:
+        assert int(N) == N, \
+            "N has to be an integer in get_convergece. At the moment, it is: {}.".format(type(N))
+    assert type(base) == float or type(base) == int or type(base) == numpy.float64 or type(base) == numpy.float, \
+        "base is not the supported type in get_convergence. Current type is: {}.".format(type(base))
+
+    # get the values of h & erros from convergence
     h, errors = get_convergence(L, alpha, beta, h_init, dt, N)
 
+    # calculate the gradient
     grad_conv, e_pow_conv = numpy.polyfit(numpy.log(h), numpy.log(errors), 1)
     convergence_y = numpy.exp(e_pow_conv) * h**grad_conv
-    print(grad_conv)
+
+    # plot the function
     pyplot.figure(figsize=(12,6))
     pyplot.loglog(h, errors)
     pyplot.loglog(h, errors, "bx")
@@ -753,11 +860,13 @@ def plot_convergence(L, alpha, beta, h_init, dt, N):
     pyplot.grid(True, which="Both")
     pyplot.title("Convergence of the method. For initial h={0:.2f} & dt={1:.2f}, convergence factor={2:.3f}.".format(h_init, dt, grad_conv))
     pyplot.show()
+    return None
 
 
 if __name__=="__main__":
+    # run the mai setup of the exercise
     h = 0.05
     dt = 0.01
     plot_graph(L, 5, 5, h, dt)
     plot_graph(L, 7/4, 5, h, dt)
-    plot_convergence(L, 7/4, 5, h, dt, 8)
+    plot_convergence(L, 7/4, 5, h, dt, 10)
