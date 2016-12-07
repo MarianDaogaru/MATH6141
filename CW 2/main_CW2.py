@@ -651,6 +651,12 @@ def shooting(L, alpha, beta, h, dt):
 
 def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
     """
+    Function that gets a function L (in this case the lagrangian )and some
+    initial parameters required by the function. Then, using shooting method
+    for different values of the the central differentiating step (h),
+    based on the h_init, base & N, values for integrating L will be obtained.
+    lastly, the value at i will be compared with i-1, and the norm will be
+    obtained, to show the converge.
 
     Parameters
     L - function
@@ -716,7 +722,7 @@ def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
 
     assert (h != 0).all(), \
         "h was not created properly in get_convergence."
-    assert (error != 0).all(), \
+    assert (errors != 0).all(), \
         "errors was not created properly in get_convergence"
     return h[1:], errors[1:]
 
