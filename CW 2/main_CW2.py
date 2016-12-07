@@ -519,7 +519,7 @@ def dq_dt(q, t, L, h, alpha, beta):
     return dqdt
 
 
-def shooting_ivp(z, L, h, alpha, beta, time):
+def shooting_ivp(z, L, yA, yB, h, alpha, beta, time):
     """
     This function represents the algorithm for for the Initial Value Problem
     (IVP) used in the shooting method.
@@ -540,6 +540,12 @@ def shooting_ivp(z, L, h, alpha, beta, time):
     L - function
         the lagrangian function that describes the profit loss required to be
         minimesed, based on the machine output y
+
+    yA - float
+        the left boundary condition of the function y(t)
+
+    yB - float
+        the right boundary condition of the function y(t)
 
     h -float
         the step required in central differencing.
@@ -573,21 +579,25 @@ def shooting_ivp(z, L, h, alpha, beta, time):
         "beta is not the supported type in shooting_ivp. Current type is: {}.".format(type(beta))
     assert type(time) == numpy.ndarray or type(time) == list, \
         "time is not the supported type in shooting_ivp. Current type is: {}.".format(type(time))
+    assert type(yA) == float or type(yA) == int or type(yA) == numpy.float64 or type(yA) == numpy.float, \
+        "yA is not the supported type in shooting_ivp. Current type is: {}.".format(type(yA))
+    assert type(yB) == float or type(yB) == int or type(yB) == numpy.float64 or type(yB) == numpy.float, \
+        "yB is not the supported type in shooting_ivp. Current type is: {}.".format(type(yB))
 
     # create the initial conditions
-    q_init = numpy.array([y_A, z])
+    q_init = numpy.array([yA, z])
     # integrate
     q = odeint(dq_dt, q_init, time, args=(L, h, alpha, beta))
 
     # get the last value
     y_boundary = q[-1, 0]
-    phi = y_boundary - y_B
+    phi = y_boundary - yB
     assert type(phi) == float or type(phi) == numpy.float64 or type(phi) == numpy.float, \
         "phi is not the supported type in shooting_ivp. Current type is: {}.".format(type(phi))
     return phi
 
 
-def shooting(L, alpha, beta, h, dt):
+def shooting(L, yA, yB, alpha, beta, h, dt):
     """
     This function implements the algorithm for the shooting method of solving
     Boundary Value Problems (BVP).
@@ -604,6 +614,12 @@ def shooting(L, alpha, beta, h, dt):
     L - function
         the lagrangian function that describes the profit loss required to be
         minimesed, based on the machine output y
+
+    yA - float
+        the left boundary condition of the function y(t)
+
+    yB - float
+        the right boundary condition of the function y(t)
 
     h -float
         the step required in central differencing.
@@ -635,14 +651,18 @@ def shooting(L, alpha, beta, h, dt):
         "beta is not the supported type in shooting. Current type is: {}.".format(type(beta))
     assert type(dt) == float or type(dt) == int or type(dt) == numpy.float64 or type(dt) == numpy.float, \
         "dt is not the supported type in shooting. Current type is: {}.".format(type(dt))
+    assert type(yA) == float or type(yA) == int or type(yA) == numpy.float64 or type(yA) == numpy.float, \
+        "yA is not the supported type in shooting. Current type is: {}.".format(type(yA))
+    assert type(yB) == float or type(yB) == int or type(yB) == numpy.float64 or type(yB) == numpy.float, \
+        "yB is not the supported type in shooting. Current type is: {}.".format(type(yB))
 
     # initial guess, chose as y_A - y_B, as the slope of the line between A & B
-    z_guess = y_A - y_B
+    z_guess = yA - yB
     time = numpy.linspace(0, 1, int(1/dt)+1)
     # get the proper z values for our function, which will give  0 to shooting_ivp
-    z_proper = newton(shooting_ivp, z_guess, args=(L, h, alpha, beta, time), tol=1e-12, maxiter=200)
+    z_proper = newton(shooting_ivp, z_guess, args=(L, yA, yB, h, alpha, beta, time), tol=1e-12, maxiter=200)
     # integrate and calculate the value of y(t)
-    q = odeint(dq_dt, [y_A, z_proper], time, args=(L, h, alpha, beta))
+    q = odeint(dq_dt, [yA, z_proper], time, args=(L, h, alpha, beta))
     assert q.shape == (time.shape[0], 2), \
         "q does not have the porper shape in shooting. It has {}.".format(q.shape)
     assert (time.shape == q[:, 0].shape), \
@@ -650,7 +670,7 @@ def shooting(L, alpha, beta, h, dt):
     return time, q[:, 0]
 
 
-def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
+def get_convergence(L, yA, yB, alpha, beta, h_init, dt, N, base=2):
     """
     Function that gets a function L (in this case the lagrangian )and some
     initial parameters required by the function. Then, using shooting method
@@ -663,6 +683,12 @@ def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
     L - function
         the lagrangian function that describes the profit loss required to be
         minimesed, based on the machine output y
+
+    yA - float
+        the left boundary condition of the function y(t)
+
+    yB - float
+        the right boundary condition of the function y(t)
 
     h_init - float
         the initial step required in central differencing.This will be modified
@@ -712,13 +738,17 @@ def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
             "N has to be an integer in get_convergece. At the moment, it is: {}.".format(type(N))
     assert type(base) == float or type(base) == int or type(base) == numpy.float64 or type(base) == numpy.float, \
         "base is not the supported type in get_convergence. Current type is: {}.".format(type(base))
+    assert type(yA) == float or type(yA) == int or type(yA) == numpy.float64 or type(yA) == numpy.float, \
+        "yA is not the supported type in get_convergence. Current type is: {}.".format(type(yA))
+    assert type(yB) == float or type(yB) == int or type(yB) == numpy.float64 or type(yB) == numpy.float, \
+        "yB is not the supported type in get_convergence. Current type is: {}.".format(type(yB))
 
     errors = numpy.zeros(N)
     convergence = numpy.zeros([N, int(1/dt)+1])
     h = numpy.zeros(N)
     for i in range(N):
         h[i] = h_init / base**i
-        time, convergence[i] = shooting(L, alpha, beta, h[i], dt)
+        time, convergence[i] = shooting(L, yA, yB, alpha, beta, h[i], dt)
         errors[i] = numpy.linalg.norm((convergence[i] - convergence[i-1]), 2)
 
     assert (h != 0).all(), \
@@ -730,7 +760,7 @@ def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
     return h[1:], errors[1:]
 
 
-def plot_graph(L, alpha, beta, h, dt):
+def plot_graph(L, yA, yB, alpha, beta, h, dt):
     """
     This function takes another function L (which is dependent on another
     function y(t) & several parameters required by
@@ -741,6 +771,12 @@ def plot_graph(L, alpha, beta, h, dt):
     L - function
         the lagrangian function that describes the profit loss required to be
         minimesed, based on the machine output y
+
+    yA - float
+        the left boundary condition of the function y(t)
+
+    yB - float
+        the right boundary condition of the function y(t)
 
     h - float
         the step required in central differencing
@@ -770,9 +806,13 @@ def plot_graph(L, alpha, beta, h, dt):
         "dt is not the supported type in plot_graph. Current type is: {}.".format(type(dt))
     assert type(h) == float or type(h) == int or type(h) == numpy.float64 or type(h) == numpy.float, \
         "h is not the supported type in plot_graph. Current type is: {}.".format(type(h))
+    assert type(yA) == float or type(yA) == int or type(yA) == numpy.float64 or type(yA) == numpy.float, \
+        "yA is not the supported type in plot_graph. Current type is: {}.".format(type(yA))
+    assert type(yB) == float or type(yB) == int or type(yB) == numpy.float64 or type(yB) == numpy.float, \
+        "yB is not the supported type in plot_graph. Current type is: {}.".format(type(yB))
 
     # get the values for time & integration of y
-    t, q = shooting(L, alpha, beta, h, dt)
+    t, q = shooting(L, yA, yB, alpha, beta, h, dt)
 
     # plot the graph
     pyplot.figure(figsize=(12,6))
@@ -785,7 +825,7 @@ def plot_graph(L, alpha, beta, h, dt):
     return None
 
 
-def plot_convergence(L, alpha, beta, h_init, dt, N, base=2):
+def plot_convergence(L, yA, yB, alpha, beta, h_init, dt, N, base=2):
     """
     This function takes a function L dependent on another function y(t),
     and several parameters required to apply the shooting BVp method.
@@ -798,6 +838,12 @@ def plot_convergence(L, alpha, beta, h_init, dt, N, base=2):
     L - function
         the lagrangian function that describes the profit loss required to be
         minimesed, based on the machine output y
+
+    yA - float
+        the left boundary condition of the function y(t)
+
+    yB - float
+        the right boundary condition of the function y(t)
 
     h_init - float
         the initial step required in central differencing.This will be modified
@@ -843,9 +889,13 @@ def plot_convergence(L, alpha, beta, h_init, dt, N, base=2):
             "N has to be an integer in get_convergece. At the moment, it is: {}.".format(type(N))
     assert type(base) == float or type(base) == int or type(base) == numpy.float64 or type(base) == numpy.float, \
         "base is not the supported type in get_convergence. Current type is: {}.".format(type(base))
+    assert type(yA) == float or type(yA) == int or type(yA) == numpy.float64 or type(yA) == numpy.float, \
+        "yA is not the supported type in plot_convergence. Current type is: {}.".format(type(yA))
+    assert type(yB) == float or type(yB) == int or type(yB) == numpy.float64 or type(yB) == numpy.float, \
+        "yB is not the supported type in plot_convergence. Current type is: {}.".format(type(yB))
 
     # get the values of h & erros from convergence
-    h, errors = get_convergence(L, alpha, beta, h_init, dt, N)
+    h, errors = get_convergence(L, yA, yB, alpha, beta, h_init, dt, N)
 
     # calculate the gradient
     grad_conv, e_pow_conv = numpy.polyfit(numpy.log(h), numpy.log(errors), 1)
@@ -867,6 +917,6 @@ if __name__=="__main__":
     # run the mai setup of the exercise
     h = 0.05
     dt = 0.01
-    plot_graph(L, 5, 5, h, dt)
-    plot_graph(L, 7/4, 5, h, dt)
-    plot_convergence(L, 7/4, 5, h, dt, 10)
+    plot_graph(L, y_A, y_B, 5, 5, h, dt)
+    plot_graph(L, y_A, y_B, 7/4, 5, h, dt)
+    plot_convergence(L, y_A, y_B, 7/4, 5, h, dt, 10)
