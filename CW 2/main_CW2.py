@@ -1,3 +1,42 @@
+"""
+This code was written for MATH6141 - Numerical Methods, Coursework 2
+
+Author: Marian Daogaru, md2g12@soton.ac.uk
+Created: 03/12/2016
+Last Update: 07/12/2016
+
+In this code, the shooting method for calculating Boundary Value Problems (BVP)
+has been implemented. As this problem was presented as boundary value problem
+with the values at the start (t=0),and at the end of the integration (t=1),
+shooting paired with Newton root finding was considered for several reasons.
+
+The main reason for using shooting is its inherite fast implementation.
+Shooting is described as "fast and accurate, when working". Compared with other
+methods for solving BVPs, shooting is considered easier to implement. However,
+it is susceptible ill-posed Initial Value Problems(IVP).
+As such, with the IVP set, shooting was implemented with relative ease. Post
+implementation, the overall accuracy of the method was determined to be
+reasonable (order 2).
+In addition to fast implementation, shooting was chosen as it provides
+decent accuracy based on the the time-step and central differentiation step,
+starting from order 2 accuracy. For our purposes, this is acceptable.
+Thirdly, the shooting method was chose for its fast optimisation and
+the quick calculation of the root of the auxiliary function.
+Lastly, it was chose because it converged.
+
+Moreover, the root finding method was chosen as the Newton method.
+This choice was made as the Newton method has a better convergence,
+and requires just one initial quess for the IVP.
+
+After the BVP has been computed, the graphs for the value of y(t) from (0, 1)
+with different values of alpha & beta were plotted. In the case of alpha=7/4
+and beta=5, it can be observed that the value of y(t) exceeds 1. While
+numerically, this makes sense, from a physical point of view, this is not
+possible, as we are either not running the machine at 100% efficiency,
+or at those points we are putting the machine in overdrive. However, this
+increase is quite small, and it could be due to numerical rounding errors.
+"""
+
 import numpy
 from matplotlib import pyplot
 from scipy.integrate import odeint
@@ -751,9 +790,9 @@ def get_convergence(L, yA, yB, alpha, beta, h_init, dt, N, base=2):
         time, convergence[i] = shooting(L, yA, yB, alpha, beta, h[i], dt)
         errors[i] = numpy.linalg.norm((convergence[i] - convergence[i-1]), 2)
 
-    assert (h != 0).all(), \
+    assert (h[1:] != 0).all(), \
         "h was not created properly in get_convergence."
-    assert (errors != 0).all(), \
+    assert (errors[1:] != 0).all(), \
         "errors was not created properly in get_convergence"
     assert (h.shape == errors.shape), \
         "errors & h should have the same shape in get_convergence."
