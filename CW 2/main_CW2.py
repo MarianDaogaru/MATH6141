@@ -600,7 +600,7 @@ def shooting(L, alpha, beta, h, dt):
     guess z, for which y(b)=B, we must find the root of phi at position b, to
     a given tolerance.
 
-    Paramters
+    Parameters
     L - function
         the lagrangian function that describes the profit loss required to be
         minimesed, based on the machine output y
@@ -649,15 +649,75 @@ def shooting(L, alpha, beta, h, dt):
     return time, q[:, 0]
 
 
-def get_convergence(L, alpha, beta, h_init, dt, N, order=2):
+def get_convergence(L, alpha, beta, h_init, dt, N, base=2):
+    """
+
+    Parameters
+    L - function
+        the lagrangian function that describes the profit loss required to be
+        minimesed, based on the machine output y
+
+    h_init - float
+        the initial step required in central differencing.This will be modified
+        with each iteration based on the following: h = h_init / base**i,
+        with i from 1 to N-1
+
+    alpha - float
+            penalty function factor
+
+    beta - float
+            penalty function factor
+
+    dt - float
+        the time step required for integration
+
+    N - int
+        the number of iterations the code will execute shooting based on the
+        other parameters given. In addition, each run will use a different
+        step size h = h_init/ base**i, with i from 1 to N-1
+
+    base - float
+            the base for creating different values for the step-size
+
+    Return
+    h - numpy array (N-1, )
+        array containing the different step sizes for central differencing
+
+    errors - numpy array (N-1, )
+            array containing the norm of the results from ith step minus
+            the i-1 step. However, the initial (i=0) result will only be
+            used to compare the 2nd (i=1) result
+    """
+    assert isinstance(L, types.FunctionType), \
+        "L is not a function in get_convergence. It is: {}.".format(type(L))
+    assert type(alpha) == float or type(alpha) == int or type(alpha) == numpy.float64 or type(alpha) == numpy.float, \
+        "alpha is not the supported type in get_convergence. Current type is: {}.".format(type(alpha))
+    assert type(beta) == float or type(beta) == int or type(beta) == numpy.float64 or type(beta) == numpy.float, \
+        "beta is not the supported type in get_convergence. Current type is: {}.".format(type(beta))
+    assert type(dt) == float or type(dt) == int or type(dt) == numpy.float64 or type(dt) == numpy.float, \
+        "dt is not the supported type in get_convergence. Current type is: {}.".format(type(dt))
+    assert type(h_init) == float or type(h_init) == int or type(h_init) == numpy.float64 or type(h_init) == numpy.float, \
+        "h_init is not the supported type in get_convergence. Current type is: {}.".format(type(h_init))
+    assert type(N) == float or type(N) == int or type(N) == numpy.float64 or type(N) == numpy.float, \
+        "N is not the supported type in get_convergence. Current type is: {}.".format(type(N))
+    if type(N) != int:
+        assert int(N) == N, \
+            "N has to be an integer in get_convergece. At the moment, it is: {}.".format(type(N))
+    assert type(base) == float or type(base) == int or type(base) == numpy.float64 or type(base) == numpy.float, \
+        "base is not the supported type in get_convergence. Current type is: {}.".format(type(base))
+
     errors = numpy.zeros(N)
     convergence = numpy.zeros([N, int(1/dt)+1])
     h = numpy.zeros(N)
     for i in range(N):
-        h[i] = h_init / order**i
+        h[i] = h_init / base**i
         time, convergence[i] = shooting(L, alpha, beta, h[i], dt)
         errors[i] = numpy.linalg.norm((convergence[i] - convergence[i-1]), 2)
 
+    assert (h != 0).all(), \
+        "h was not created properly in get_convergence."
+    assert (error != 0).all(), \
+        "errors was not created properly in get_convergence"
     return h[1:], errors[1:]
 
 
