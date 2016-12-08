@@ -77,5 +77,31 @@ def test_d2L_dtdydot():
             "values don't match"
 
 
+def test_d2L_dydydot():
+    for i in range(10):
+        t = numpy.random.random()
+        h = numpy.random.random()
+        a = numpy.random.random()
+        b = numpy.random.random()
+        q = numpy.random.random(2)
+        dy = q[1]
+        y = q[0]
+        val_dl = d2L_dydydot(L, t, q, h, a, b)
+        y1 = t + h
+        y2 = t - h
+        dy1 = q[1]+h
+        dy2 = q[1]-h
+        k1 = a * dy1 * dy1 + b * (t * t - 1) * dy1 * dy1 * dy1 - y1
+        k2 = a * dy1 * dy1 + b * (t * t - 1) * dy1 * dy1 * dy1 - y2
+        k3 = a * dy2 * dy2 + b * (t * t - 1) * dy2 * dy2 * dy2 - y2
+        k4 = a * dy2 * dy2 + b * (t * t - 1) * dy2 * dy2 * dy2 - y1
+
+        val = q[1] * (k1 - k2 + k3 - k4) / (4*h**2)
+
+        assert type(val_dl) == float or type(val_dl) == numpy.float64, \
+            "dL_dy didn't create proper type"
+        assert numpy.allclose(val, val_dl), \
+            "values don't match"
+
 if __name__ == "__main__":
     pytest.main()
