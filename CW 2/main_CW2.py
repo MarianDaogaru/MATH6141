@@ -860,6 +860,7 @@ def plot_graph(L, yA, yB, alpha, beta, h, dt):
     pyplot.ylabel("y(t)")
     pyplot.title("The efficiency of the plant required for alpha={} & beta={}. h={} and dt={}".format(alpha, beta, h, dt))
     pyplot.legend()
+    pyplot.grid(True, which="Both")
     pyplot.show()
     return None
 
