@@ -1,5 +1,5 @@
 """
-testing for the CW2
+testing for the CW2 base function.
 """
 
 import pytest
@@ -50,6 +50,7 @@ def test_dL_dy():
         assert numpy.allclose(val, val_dl), \
             "values don't match"
 
+
 def test_d2L_dtdydot():
     for i in range(10):
         t = numpy.random.random()
@@ -72,7 +73,7 @@ def test_d2L_dtdydot():
         val = (k1 - k2 - k3 + k4) / (4 * h**2)
 
         assert type(val_dl) == float or type(val_dl) == numpy.float64, \
-            "dL_dy didn't create proper type"
+            "d2L_dtdydot didn't create proper type"
         assert numpy.allclose(val, val_dl), \
             "values don't match"
 
@@ -99,9 +100,78 @@ def test_d2L_dydydot():
         val = q[1] * (k1 - k2 + k3 - k4) / (4*h**2)
 
         assert type(val_dl) == float or type(val_dl) == numpy.float64, \
-            "dL_dy didn't create proper type"
+            "dL_dydydot didn't create proper type"
         assert numpy.allclose(val, val_dl), \
             "values don't match"
+
+
+def test_d2L_dydot2():
+    for i in range(10):
+        t = numpy.random.random()
+        h = numpy.random.random()
+        a = numpy.random.random()
+        b = numpy.random.random()
+        q = numpy.random.random(2)
+        dy = q[1]
+        y = q[0]
+        val_dl = d2L_dydot2(L, t, q, h, a, b)
+        dy0 = q[1]
+        dy1 = q[1]+h
+        dy2 = q[1]-h
+        k1 = a * dy1 * dy1 + b * (t * t - 1) * dy1 * dy1 * dy1 - y
+        k2 = a * dy0 * dy0 + b * (t * t - 1) * dy0 * dy0 * dy0 - y
+        k3 = a * dy2 * dy2 + b * (t * t - 1) * dy2 * dy2 * dy2 - y
+
+        val = (k1 - 2 * k2 + k3) / h**2
+
+        assert type(val_dl) == float or type(val_dl) == numpy.float64, \
+            "dL_dydot2 didn't create proper type"
+        assert numpy.allclose(val, val_dl), \
+            "values don't match"
+
+
+def test_f():
+    for i in range(10):
+        t = numpy.random.random()
+        h = numpy.random.random()
+        a = numpy.random.random()
+        b = numpy.random.random()
+        q = numpy.random.random(2)
+        dy = q[1]
+        y = q[0]
+        val_f = f(L, t, q, h, a, b)
+
+        k1 = dL_dy(L, t, q, h, a, b)
+        k2 = d2L_dtdydot(L, t, q, h, a, b)
+        k3 = d2L_dydydot(L, t, q, h, a, b)
+        k4 = d2L_dydot2(L, t, q, h, a, b)
+        val = (k1 - k2 - k3) / k4
+
+        assert type(val_f) == float or type(val_f) == numpy.float64, \
+            "f didn't create proper type"
+        assert numpy.allclose(val, val_f), \
+            "values don't match"
+
+
+def test_dq_dt():
+    for i in range(10):
+        t = numpy.random.random()
+        h = numpy.random.random()
+        a = numpy.random.random()
+        b = numpy.random.random()
+        q = numpy.random.random(2)
+        dy = q[1]
+        y = q[0]
+        dq = dq_dt(q, t, L, h, a, b)
+        ddy = f(L, t, q, h, a, b)
+
+        assert (dq.shape == q.shape), \
+            "not the proper shape."
+        assert numpy.allclose(dy, dq[0]), \
+            "dq_dt doest not create proper ydot val"
+        assert numpy.allclose(ddy, dq[1]), \
+            "dq_dt doest not create proper yddot val"
+
 
 if __name__ == "__main__":
     pytest.main()
